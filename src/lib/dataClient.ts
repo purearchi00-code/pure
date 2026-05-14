@@ -1,5 +1,6 @@
 import type { LandInfo, BuildingInfo } from './types';
 import { findMockEntry } from './mockData';
+import { fetchAllEUMData } from './api/eumClient';
 
 /**
  * 토지/건축물 데이터 조회 추상화 레이어
@@ -12,22 +13,39 @@ import { findMockEntry } from './mockData';
 
 const VWORLD_KEY = process.env.VWORLD_API_KEY;
 const DATA_GO_KR_KEY = process.env.DATA_GO_KR_API_KEY;
+const EUM_KEY = process.env.EUM_API_KEY;
 
 /**
  * 주소 → 토지 정보
  */
 export async function fetchLandInfo(address: string): Promise<LandInfo> {
-  // TODO: VWORLD_KEY 발급되면 실제 API 호출로 교체
-  if (VWORLD_KEY) {
-    // return fetchFromVWorld(address);
-    console.warn('[VWorld] API 키는 설정됐지만 아직 구현 안 됨. mock 사용.');
+  // Mock 먼저 조회 (기본 정보)
+  const mockEntry = findMockEntry(address);
+  let land = { ...mockEntry.land };
+
+  // EUM API 키가 있으면 용도지역/지구단위계획/규제 실시간 조회로 업데이트
+  if (EUM_KEY) {
+    try {
+      const eumData = await fetchAllEUMData(land.jibun);
+      if (eumData.zoning) {
+        land.zoning = eumData.zoning;
+        land.source = 'eum';
+      }
+      if (eumData.district) {
+        land.district = eumData.district;
+      }
+      if (eumData.restrictions.length > 0) {
+        land.landUseRestrictions = eumData.restrictions;
+      }
+    } catch (err) {
+      console.warn('[EUM] Land info update failed, using mock:', err);
+    }
+  } else {
+    // Mock 모드: 약간의 딜레이로 실제 API처럼 시뮬레이션
+    await sleep(300 + Math.random() * 400);
   }
 
-  // Mock 모드: 약간의 딜레이로 실제 API처럼 시뮬레이션
-  await sleep(300 + Math.random() * 400);
-
-  const entry = findMockEntry(address);
-  return entry.land;
+  return land;
 }
 
 /**
