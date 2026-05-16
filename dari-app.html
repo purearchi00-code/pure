@@ -610,6 +610,53 @@
     }
 
     // ============================================================
+    // 국가법령정보센터 URL 생성 (실제로 연결되는 URL)
+    // ============================================================
+    // 주요 법령의 직접 URL 매핑
+    const LAW_DIRECT = {
+      '건축법': 'https://www.law.go.kr/법령/건축법',
+      '건축법 시행령': 'https://www.law.go.kr/법령/건축법시행령',
+      '건축법시행령': 'https://www.law.go.kr/법령/건축법시행령',
+      '국토계획법': 'https://www.law.go.kr/법령/국토의계획및이용에관한법률',
+      '국토의 계획 및 이용에 관한 법률': 'https://www.law.go.kr/법령/국토의계획및이용에관한법률',
+      '주차장법': 'https://www.law.go.kr/법령/주차장법',
+      '주차장법 시행령': 'https://www.law.go.kr/법령/주차장법시행령',
+      '주차장법 시행규칙': 'https://www.law.go.kr/법령/주차장법시행규칙',
+      '하수도법': 'https://www.law.go.kr/법령/하수도법',
+      '하수도법 시행령': 'https://www.law.go.kr/법령/하수도법시행령',
+      '소방시설법': 'https://www.law.go.kr/법령/소방시설설치및관리에관한법률',
+      '소방시설법 시행령': 'https://www.law.go.kr/법령/소방시설설치및관리에관한법률시행령',
+      '건축물대장의 기재 및 관리 등에 관한 규칙': 'https://www.law.go.kr/법령/건축물대장의기재및관리등에관한규칙',
+      '건축물의 에너지절약설계기준': 'https://www.law.go.kr/행정규칙/건축물의에너지절약설계기준',
+    };
+
+    function lawUrl(text) {
+      // 1. 괄호 안 설명 제거
+      let clean = text.replace(/\([^)]*\)/g, '').trim();
+
+      // 2. 법령명만 추출 (제X조, 별표, 별지 앞까지)
+      let baseLaw = clean;
+      const cuts = [
+        clean.search(/\s+제\d+/),
+        clean.search(/\s+별표/),
+        clean.search(/\s+별지/),
+        clean.search(/\s+부칙/),
+      ].filter(i => i > 0);
+
+      if (cuts.length > 0) {
+        baseLaw = clean.substring(0, Math.min(...cuts)).trim();
+      }
+
+      // 3. 직접 URL이 매핑되어 있으면 사용
+      if (LAW_DIRECT[baseLaw]) {
+        return LAW_DIRECT[baseLaw];
+      }
+
+      // 4. fallback: 국가법령정보센터 검색
+      return `https://www.law.go.kr/LSW/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=${encodeURIComponent(text)}`;
+    }
+
+    // ============================================================
     // 주소 파싱
     // ============================================================
     function resolveAddress(addr) {
@@ -829,7 +876,7 @@
         <li class="law-item">
           <span class="law-tag">${l.tag}</span>
           <span class="law-text">${l.text}</span>
-          <a class="law-link" href="https://www.law.go.kr/lsSc.do?menuId=1&dt=20260101&query=${encodeURIComponent(l.text)}" target="_blank">원문 보기 ↗</a>
+          <a class="law-link" href="${lawUrl(l.text)}" target="_blank" rel="noopener noreferrer">원문 보기 ↗</a>
         </li>
       `).join('');
 
