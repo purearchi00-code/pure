@@ -1,6 +1,7 @@
 import type { LandInfo, BuildingInfo } from './types';
 import { findMockEntry } from './mockData';
 import { fetchAllEUMData } from './api/eumClient';
+import { fetchBuildingRegister } from './api/buildingRegisterClient';
 
 /**
  * 토지/건축물 데이터 조회 추상화 레이어
@@ -53,11 +54,16 @@ export async function fetchLandInfo(address: string): Promise<LandInfo> {
  */
 export async function fetchBuildingInfo(address: string): Promise<BuildingInfo | null> {
   if (DATA_GO_KR_KEY) {
-    // return fetchFromDataGoKr(address);
-    console.warn('[공공데이터포털] API 키는 설정됐지만 아직 구현 안 됨. mock 사용.');
+    try {
+      const building = await fetchBuildingRegister(address);
+      if (building) return building;
+      console.warn('[건축물대장] 결과 없음, mock fallback:', address);
+    } catch (err) {
+      console.warn('[건축물대장] 호출 실패, mock fallback:', err);
+    }
+  } else {
+    await sleep(400 + Math.random() * 500);
   }
-
-  await sleep(400 + Math.random() * 500);
 
   const entry = findMockEntry(address);
   return entry.building;
