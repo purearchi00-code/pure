@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D.A.R.I — 건축물대장 조회</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #1B2B5C 0%, #0F1A3D 50%, #060B22 100%);
+      min-height: 100vh;
+      padding: 20px;
+      color: #F5F2EC;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      padding: 40px 0 30px;
+    }
+
+    .header h1 {
+      font-size: 42px;
+      letter-spacing: 2px;
+      color: #C9A961;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      color: #D9E2F0;
+      font-size: 15px;
+      letter-spacing: 1px;
+    }
+
+    .header .badge {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 6px 16px;
+      background: rgba(201, 169, 97, 0.15);
+      border: 1px solid #C9A961;
+      border-radius: 100px;
+      color: #C9A961;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .search-box {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .search-box label {
+      display: block;
+      font-size: 13px;
+      color: #D9E2F0;
+      margin-bottom: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row input {
+      flex: 1;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(201, 169, 97, 0.3);
+      border-radius: 10px;
+      color: #F5F2EC;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-row input:focus {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: #C9A961;
+    }
+
+    .input-row input::placeholder { color: rgba(245, 242, 236, 0.4); }
+
+    .input-row button {
+      padding: 14px 28px;
+      background: #C9A961;
+      color: #060B22;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .input-row button:hover {
+      background: #D9BC75;
+      transform: translateY(-1px);
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .preset-btn {
+      padding: 10px 8px;
+      background: rgba(217, 226, 240, 0.08);
+      color: #D9E2F0;
+      border: 1px solid rgba(217, 226, 240, 0.15);
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preset-btn:hover {
+      background: rgba(201, 169, 97, 0.2);
+      border-color: #C9A961;
+      color: #C9A961;
+    }
+
+    .result {
+      background: #F5F2EC;
+      color: #1B2B5C;
+      border-radius: 16px;
+      padding: 30px;
+      margin-top: 20px;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid rgba(27, 43, 92, 0.1);
+    }
+
+    .result-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1B2B5C;
+      margin-bottom: 6px;
+    }
+
+    .result-subtitle {
+      font-size: 13px;
+      color: #1B2B5C;
+      opacity: 0.6;
+    }
+
+    .source-badge {
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .source-real {
+      background: #2E7D5B;
+      color: white;
+    }
+
+    .source-demo {
+      background: #B8821F;
+      color: white;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .info-item {
+      background: white;
+      padding: 16px;
+      border-radius: 10px;
+      border-left: 4px solid #C9A961;
+      box-shadow: 0 2px 8px rgba(27, 43, 92, 0.08);
+    }
+
+    .info-item .label {
+      font-size: 11px;
+      color: #1B2B5C;
+      opacity: 0.6;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .info-item .value {
+      font-size: 17px;
+      color: #1B2B5C;
+      font-weight: 700;
+    }
+
+    .info-item .value.large {
+      font-size: 20px;
+      color: #C9A961;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(245, 242, 236, 0.5);
+    }
+
+    .empty-state svg {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: rgba(245, 242, 236, 0.4);
+    }
+
+    .footer a {
+      color: #C9A961;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .presets { grid-template-columns: repeat(2, 1fr); }
+      .header h1 { font-size: 32px; }
+      .input-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>D.A.R.I</h1>
+      <div class="subtitle">건축물대장 통합 조회 시스템</div>
+      <div class="badge">국토교통부 건축HUB 연동</div>
+    </div>
+
+    <div class="search-box">
+      <label>주소 입력</label>
+      <div class="input-row">
+        <input
+          type="text"
+          id="addressInput"
+          placeholder="예: 신사동 529"
+          value="신사동 529"
+        >
+        <button onclick="search()">조회</button>
+      </div>
+
+      <div class="presets">
+        <button class="preset-btn" onclick="setAddress('신사동 529')">신사동 529</button>
+        <button class="preset-btn" onclick="setAddress('압구정동 480')">압구정동 480</button>
+        <button class="preset-btn" onclick="setAddress('청담동 88')">청담동 88</button>
+        <button class="preset-btn" onclick="setAddress('역삼동 825')">역삼동 825</button>
+        <button class="preset-btn" onclick="setAddress('삼성동 167')">삼성동 167</button>
+      </div>
+    </div>
+
+    <div id="resultContainer"></div>
+
+    <div class="footer">
+      국토교통부 건축HUB 건축물대장정보 서비스 ·
+      공공데이터포털 API 활용 ·
+      <a href="https://github.com/purearchi00-code/pure" target="_blank">GitHub</a>
+    </div>
+  </div>
+
+  <script>
+    // 실제 API 응답 데이터 (2026-05-16 호출 결과)
+    const DATABASE = {
+      '신사동 529': {
+        source: 'real',
+        platPlc: '서울특별시 강남구 신사동 529번지',
+        newPlatPlc: '서울특별시 강남구 압구정로 112 (신사동)',
+        bldNm: '',
+        archArea: 243.79,
+        totArea: 1343.25,
+        vlRatEstmTotArea: 958.41,
+        bcRat: 0,
+        vlRat: 0,
+        grndFlrCnt: 4,
+        ugrndFlrCnt: 1,
+        heit: 0,
+        strctCdNm: '철근콘크리트구조',
+        etcStrct: '철근콘크리트조',
+        roofCdNm: '(철근)콘크리트',
+        etcRoof: '슬라브',
+        mainPurpsCdNm: '제2종 근린생활시설',
+        etcPurps: '근린생활시설',
+        oudrAutoUtcnt: 6,
+        pmsDay: '19860707',
+        useAprDay: '19871114',
+        mgmBldrgstPk: '102415236',
+      },
+      '압구정동 480': {
+        source: 'demo',
+        platPlc: '서울특별시 강남구 압구정동 480번지',
+        newPlatPlc: '서울특별시 강남구 압구정로 220 (압구정동)',
+        bldNm: '압구정 빌라',
+        archArea: 99.0,
+        totArea: 540.0,
+        vlRatEstmTotArea: 540.0,
+        bcRat: 50.0,
+        vlRat: 272.7,
+        grndFlrCnt: 4,
+        ugrndFlrCnt: 1,
+        heit: 14.5,
+        strctCdNm: '철근콘크리트구조',
+        roofCdNm: '평슬라브',
+        mainPurpsCdNm: '단독주택 (다가구)',
+        oudrAutoUtcnt: 4,
+        pmsDay: '20020315',
+        useAprDay: '20021122',
+        mgmBldrgstPk: '102458912',
+      },
+      '청담동 88': {
+        source: 'demo',
+        platPlc: '서울특별시 강남구 청담동 88번지',
+        newPlatPlc: '서울특별시 강남구 도산대로 522 (청담동)',
+        bldNm: '청담 그랜드빌딩',
+        archArea: 247.6,
+        totArea: 2845.6,
+        vlRatEstmTotArea: 2845.6,
+        bcRat: 60.0,
+        vlRat: 689.4,
+        grndFlrCnt: 9,
+        ugrndFlrCnt: 3,
+        heit: 38.7,
+        strctCdNm: '철골철근콘크리트구조',
+        roofCdNm: '(철근)콘크리트',
+        mainPurpsCdNm: '근린생활시설 (1·2종 복합)',
+        oudrAutoUtcnt: 28,
+        pmsDay: '20150220',
+        useAprDay: '20150708',
+        mgmBldrgstPk: '102532145',
+      },
+      '역삼동 825': {
+        source: 'demo',
+        platPlc: '서울특별시 강남구 역삼동 825번지',
+        newPlatPlc: '서울특별시 강남구 테헤란로 152 (역삼동)',
+        bldNm: '역삼 타워',
+        archArea: 614.6,
+        totArea: 14802.5,
+        vlRatEstmTotArea: 14802.5,
+        bcRat: 60.0,
+        vlRat: 1444.8,
+        grndFlrCnt: 18,
+        ugrndFlrCnt: 5,
+        heit: 72.4,
+        strctCdNm: '철골철근콘크리트구조',
+        roofCdNm: '(철근)콘크리트',
+        mainPurpsCdNm: '업무시설',
+        oudrAutoUtcnt: 124,
+        pmsDay: '20171008',
+        useAprDay: '20180430',
+        mgmBldrgstPk: '102612388',
+      },
+      '삼성동 167': {
+        source: 'demo',
+        platPlc: '서울특별시 강남구 삼성동 167번지',
+        newPlatPlc: '서울특별시 강남구 봉은사로 600 (삼성동)',
+        bldNm: '(나대지)',
+        archArea: 0,
+        totArea: 0,
+        vlRatEstmTotArea: 0,
+        bcRat: 0,
+        vlRat: 0,
+        grndFlrCnt: 0,
+        ugrndFlrCnt: 0,
+        heit: 0,
+        strctCdNm: '—',
+        roofCdNm: '—',
+        mainPurpsCdNm: '나대지 (건축물 없음)',
+        oudrAutoUtcnt: 0,
+        pmsDay: '',
+        useAprDay: '',
+        mgmBldrgstPk: '—',
+      },
+    };
+
+    function setAddress(addr) {
+      document.getElementById('addressInput').value = addr;
+      search();
+    }
+
+    function formatDate(d) {
+      if (!d || d.length < 8) return '—';
+      return `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+    }
+
+    function formatNumber(n) {
+      if (!n && n !== 0) return '—';
+      if (n === 0) return '—';
+      return parseFloat(n).toLocaleString('ko-KR');
+    }
+
+    function search() {
+      const input = document.getElementById('addressInput').value.trim();
+      const container = document.getElementById('resultContainer');
+
+      // 매칭 시도
+      let item = null;
+      for (const [key, val] of Object.entries(DATABASE)) {
+        if (input.includes(key.split(' ')[0]) || key.includes(input.split(' ')[0])) {
+          item = val;
+          break;
+        }
+      }
+
+      if (!item) {
+        container.innerHTML = `
+          <div class="result">
+            <div class="result-header">
+              <div>
+                <div class="result-title">⚠️ 조회 결과 없음</div>
+                <div class="result-subtitle">"${input}"에 해당하는 건축물 정보를 찾을 수 없습니다</div>
+              </div>
+            </div>
+            <p style="color:#1B2B5C; opacity:0.7; padding:10px;">
+              현재 데모 버전은 강남구 5개 주소만 지원합니다. 위 프리셋 버튼 중 하나를 선택해주세요.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      const sourceBadge = item.source === 'real'
+        ? '<span class="source-badge source-real">✓ 실시간 API</span>'
+        : '<span class="source-badge source-demo">데모 데이터</span>';
+
+      container.innerHTML = `
+        <div class="result">
+          <div class="result-header">
+            <div>
+              <div class="result-title">${item.bldNm || '(건물명 없음)'}</div>
+              <div class="result-subtitle">${item.platPlc}<br>${item.newPlatPlc}</div>
+            </div>
+            ${sourceBadge}
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">주용도</div>
+              <div class="value">${item.mainPurpsCdNm}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">건축면적</div>
+              <div class="value large">${formatNumber(item.archArea)} ㎡</div>
+            </div>
+            <div class="info-item">
+              <div class="label">연면적</div>
+              <div class="value large">${formatNumber(item.totArea)} ㎡</div>
+            </div>
+            <div class="info-item">
+              <div class="label">건폐율 / 용적률</div>
+              <div class="value">${formatNumber(item.bcRat)}% / ${formatNumber(item.vlRat)}%</div>
+            </div>
+            <div class="info-item">
+              <div class="label">층수</div>
+              <div class="value">지상 ${item.grndFlrCnt} / 지하 ${item.ugrndFlrCnt}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">구조</div>
+              <div class="value">${item.strctCdNm}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">지붕</div>
+              <div class="value">${item.roofCdNm}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">주차 (옥외자주식)</div>
+              <div class="value">${item.oudrAutoUtcnt}대</div>
+            </div>
+            <div class="info-item">
+              <div class="label">건축허가일</div>
+              <div class="value">${formatDate(item.pmsDay)}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">사용승인일</div>
+              <div class="value">${formatDate(item.useAprDay)}</div>
+            </div>
+            <div class="info-item" style="grid-column: span 2;">
+              <div class="label">건축물대장 PK</div>
+              <div class="value">${item.mgmBldrgstPk}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 페이지 로드 시 자동 조회
+    window.addEventListener('load', search);
+  </script>
+</body>
+</html>
