@@ -631,29 +631,9 @@
     };
 
     function lawUrl(text) {
-      // 1. 괄호 안 설명 제거
-      let clean = text.replace(/\([^)]*\)/g, '').trim();
-
-      // 2. 법령명만 추출 (제X조, 별표, 별지 앞까지)
-      let baseLaw = clean;
-      const cuts = [
-        clean.search(/\s+제\d+/),
-        clean.search(/\s+별표/),
-        clean.search(/\s+별지/),
-        clean.search(/\s+부칙/),
-      ].filter(i => i > 0);
-
-      if (cuts.length > 0) {
-        baseLaw = clean.substring(0, Math.min(...cuts)).trim();
-      }
-
-      // 3. 직접 URL이 매핑되어 있으면 사용
-      if (LAW_DIRECT[baseLaw]) {
-        return LAW_DIRECT[baseLaw];
-      }
-
-      // 4. fallback: 국가법령정보센터 검색
-      return `https://www.law.go.kr/LSW/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=${encodeURIComponent(text)}`;
+      // 괄호 안 설명만 제거하고 검색 URL 사용 (가장 신뢰성 높음)
+      const clean = text.replace(/\([^)]*\)/g, '').trim();
+      return `https://www.law.go.kr/LSW/lsSc.do?section=&menuId=1&subMenuId=15&tabMenuId=81&eventGubun=060101&query=${encodeURIComponent(clean)}`;
     }
 
     // ============================================================
